@@ -45,16 +45,6 @@ public class StartingPoint {
 		Dataset<Row> df = spark.sql("SELECT country.name FROM country_data lateral view explode(countries.country) t as country"); 
 		df.show();
 		 
-		 
-		 
-		
-		
-		//ds.sqlContext().sql("SELECT country.name FROM country_data lateral view explode(countries.country) t as country").show(false);
-		
-		//spark.sql("SELECT country.name FROM country_data lateral view explode(countries.country) t as country").show(false);
-		
-	
-		
 		
 
 	}
