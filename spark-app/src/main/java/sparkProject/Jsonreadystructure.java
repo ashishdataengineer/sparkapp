@@ -7,7 +7,7 @@ import org.apache.spark.sql.types.StructField;
 
 public class Jsonreadystructure {
 
-	static final StructType SCHEMA = new StructType(new StructField[] {
+	public static final StructType SCHEMA = new StructType(new StructField[] {
 
 			DataTypes.createStructField("countries",
 					new StructType().add(DataTypes.createStructField("country",

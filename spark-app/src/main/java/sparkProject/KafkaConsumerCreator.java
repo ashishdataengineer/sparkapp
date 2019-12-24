@@ -5,13 +5,12 @@ import java.util.Properties;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-
 
 public class KafkaConsumerCreator {
-
+	
 	public static Consumer<Long, String> createConsumer() {
 		Properties props = new Properties();
 		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaConstants.KAFKA_BROKERS);
@@ -21,7 +20,7 @@ public class KafkaConsumerCreator {
 		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, KafkaConstants.MAX_POLL_RECORDS);
 		props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
 		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, KafkaConstants.OFFSET_RESET_EARLIER);
-		Consumer<Long, String> consumer = new KafkaConsumer<>(props);
+		Consumer<Long, String> consumer = new KafkaConsumer<Long, String>(props);
 		consumer.subscribe(Collections.singletonList(KafkaConstants.TOPIC_NAME));
 		return consumer;
 
