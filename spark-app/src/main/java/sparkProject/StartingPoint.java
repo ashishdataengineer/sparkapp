@@ -51,20 +51,36 @@ public class StartingPoint {
 
 		Dataset<Row> ds1 = Transformations.jsonDatasetOriginal(spark,
 				context.getProperty(GlobalConstants.ReadyJsonFile));
-		ds1.show();
+		Dataset<Row> ds1_populationGt100k = ds1.filter(ds1.col("countryPopulation").cast("int").$greater(140000000)).alias("ds1_population");
+
+		Dataset<Row> ds1_countryNameContain_ia = ds1.filter(ds1.col("countryName").contains("ia")).alias("ds1_country");
+
+		Dataset<Row> ds2_populationGt100k_with_ia = ds1_populationGt100k.join(ds1_countryNameContain_ia,
+				ds1_populationGt100k.col("countryName").equalTo(ds1_countryNameContain_ia.col("countryName")));
+
+		Dataset<Row> ds2_populationGt100k_with_ia_filters_only = ds1_populationGt100k.filter(ds1_populationGt100k.col("countryName").contains("ia"));
+
+		ds1_populationGt100k.show(5);
+		ds1_countryNameContain_ia.show(5);
+
+
+		ds2_populationGt100k_with_ia.show();
+
+		ds2_populationGt100k_with_ia_filters_only.show();
+
 
 		// Filter Records
-		Dataset<Row> ds2 = ds1.filter(ds1.col("countryName").contains("a"));
-		ds2.createOrReplaceTempView("country_name_ds2");
-		ds2.show();
-
-		Dataset<Row> ds3 = ds1.filter(ds1.col("countryPopulation").cast("int").$greater(100000)).join(ds2,
-				ds1.col("countrySize").cast(DataTypes.IntegerType).alias("a1")
-						.equalTo(ds2.col("countrySize").cast(DataTypes.IntegerType).alias("a2")),
-				"INNER");
-		
-		ds3.show();
-		
+//		Dataset<Row> ds2 = ds1.filter(ds1.col("countryName").contains("a"));
+//		ds2.createOrReplaceTempView("country_name_ds2");
+//		ds2.show();
+//
+//		Dataset<Row> ds3 = ds1.filter(ds1.col("countryPopulation").cast("int").$greater(100000)).join(ds2,
+//				ds1.col("countrySize").cast(DataTypes.IntegerType).alias("a1")
+//						.equalTo(ds2.col("countrySize").cast(DataTypes.IntegerType).alias("a2")),
+//				"INNER");
+//
+//		ds3.show();
+//
 		
 		
 		
