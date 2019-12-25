@@ -1,6 +1,9 @@
 package sparkProject;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 import javax.xml.transform.TransformerException;
@@ -8,7 +11,17 @@ import org.apache.log4j.Logger;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.types.DataTypes;
+
+import scala.Function;
+import scala.Function1;
+
+import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.function.ForeachFunction;
+import org.apache.spark.api.java.function.MapFunction;
+import org.apache.spark.sql.DataFrameReader;
 
 public class StartingPoint {
 
@@ -25,24 +38,72 @@ public class StartingPoint {
 				context.getProperty("TransformedXMLOutputPath"));
 		XmltoJson.XmltoJsonprocessor(context);
 
-		//Entry oint for Dataset and DataFrame
-		SparkSession spark = SparkSession.builder().appName("Spark Program").master("local").getOrCreate();
-		
+		// Entry oint for Dataset and DataFrame
+
+		SparkConf conf = new SparkConf();
+		SparkSession spark = SparkSession.builder().config(conf).appName("Spark Program").master("local").getOrCreate();
+
 		/*
-		 * Entry point for Spark RDDs
-		 * SparkConf conf = new
+		 * Entry point for Spark RDDs SparkConf conf = new
 		 * SparkConf().setAppName("Spark Program").setMaster("local"); JavaSparkContext
 		 * sc = new JavaSparkContext(conf);
 		 */
+
+		Dataset<Row> ds1 = Transformations.jsonDatasetOriginal(spark,
+				context.getProperty(GlobalConstants.ReadyJsonFile));
+		ds1.show();
+
+		// Filter Records
+		Dataset<Row> ds2 = ds1.filter(ds1.col("countryName").contains("a"));
+		ds2.createOrReplaceTempView("country_name_ds2");
+		ds2.show();
+
+		Dataset<Row> ds3 = ds1.filter(ds1.col("countryPopulation").cast("int").$greater(100000)).join(ds2,
+				ds1.col("countrySize").cast(DataTypes.IntegerType).alias("a1")
+						.equalTo(ds2.col("countrySize").cast(DataTypes.IntegerType).alias("a2")),
+				"INNER");
 		
-		Dataset<Row> ds = spark.read().schema(Jsonreadystructure.SCHEMA)
-				.json(context.getProperty(GlobalConstants.ReadyJsonFile));
+		ds3.show();
 		
-		ds.createOrReplaceTempView("country_data");
-		Dataset<Row> df = spark.sql("SELECT country.name FROM country_data lateral view explode(countries.country) t as country"); 
-		df.show();
-		 
 		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+
+//			Dataset<Row> ds5 = spark.sql(
+//					"SELECT country_data.countryName, country_data.countryPopulation, country_data.countrySize from country_data INNER JOIN  country_name_ds2 ON country_data.countrySize = country_name_ds2.countrySize");
+//			ds5.show();
+
+		// Join Ds1 & Ds2
+
+		/*
+		 * Dataset<Row> ds4 = ds1.map(new MapFunction<Row, Row>() {
+		 * 
+		 * @Override public Row call(Row row) {
+		 * 
+		 * if (Integer.valueOf(row.get(1).toString()) > 100000) {
+		 * 
+		 * return row; }
+		 * 
+		 * }
+		 * 
+		 * }, Encoders.INT()).join(ds2,
+		 * ds1.col("countrySize").cast(DataTypes.IntegerType).alias("a1")
+		 * .equalTo(ds2.col("countrySize").cast(DataTypes.IntegerType).alias("a2")));
+		 * 
+		 * /* , * List<String> lists = new ArrayList<String>();
+		 * ds1.foreach((ForeachFunction<Row>) row -> lists.add(row.toString()));
+		 * Dataset<String> df3 = spark.createDataset(lists, Encoders.STRING());
+		 * df3.show();
+		 */
 
 	}
 

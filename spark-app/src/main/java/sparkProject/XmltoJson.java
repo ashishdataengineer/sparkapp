@@ -30,7 +30,7 @@ public class XmltoJson {
 				System.out.println(context.getProperty(GlobalConstants.ReadyJsonFile) + " File Created");
 
 				FileWriter writer = new FileWriter(jsonFile);
-				writer.append(jsonPrettyPrintString);
+				writer.append(jsonPrettyPrintString.replace("\n","").replace("\r", "").replaceAll("\\s+", ""));
 				writer.close();
 
 			} else
