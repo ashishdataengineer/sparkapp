@@ -74,7 +74,6 @@ public class XMLSparkStreamEntry {
 		}, encoder);
 
 		Dataset<Row> wordCounts = finalOP.groupBy("FirstName").count();
-		
 		StreamingQuery query = wordCounts.writeStream().outputMode("complete").format("console").start();
 		System.out.println("SHOW SCHEMA");
 		query.awaitTermination();
