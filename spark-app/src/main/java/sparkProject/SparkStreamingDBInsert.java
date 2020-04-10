@@ -1,7 +1,10 @@
 package sparkProject;
 
-
 import java.io.StringReader;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.*;
 
 import javax.xml.bind.JAXBContext;
@@ -10,9 +13,11 @@ import javax.xml.bind.Unmarshaller;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.ForeachWriter;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
+import org.apache.spark.sql.streaming.DataStreamWriter;
 import org.apache.spark.sql.streaming.StreamingQuery;
 import org.apache.spark.sql.streaming.StreamingQueryException;
 import org.apache.spark.sql.types.DataTypes;
@@ -29,7 +34,7 @@ public class SparkStreamingDBInsert {
 		structType = structType.add("FirstName", DataTypes.StringType, false);
 		structType = structType.add("LastName", DataTypes.StringType, false);
 		structType = structType.add("Title", DataTypes.StringType, false);
-		structType = structType.add("ID", DataTypes.StringType, false);
+		structType = structType.add("ID", DataTypes.IntegerType, false);
 		structType = structType.add("Division", DataTypes.StringType, false);
 		structType = structType.add("Supervisor", DataTypes.StringType, false);
 
@@ -37,7 +42,7 @@ public class SparkStreamingDBInsert {
 
 	static ExpressionEncoder<Row> encoder = RowEncoder.apply(structType);
 
-	public static void main(String[] args) throws StreamingQueryException {
+	public static void main(String[] args) throws StreamingQueryException, InterruptedException {
 
 		SparkConf conf = new SparkConf();
 		SparkSession spark = SparkSession.builder().config(conf).appName("Spark Program").master("local[*]")
@@ -73,12 +78,56 @@ public class SparkStreamingDBInsert {
 			}
 		}, encoder);
 
-		Dataset<Row> wordCounts = finalOP.groupBy("FirstName").count();
-		StreamingQuery query = wordCounts.writeStream().outputMode("complete").format("console").start();
+		DataStreamWriter<Row> query = finalOP.writeStream().foreach(new ForeachWriter<Row>() {
+
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void process(Row value) {
+
+				try {
+					String myDriver = "org.gjt.mm.mysql.Driver";
+					String myUrl = "jdbc:mysql://localhost:3306";
+					Connection conn = DriverManager.getConnection(myUrl, "root", "ashu@123");
+					Class.forName(myDriver);
+
+					String query = " insert into sys.Employee (FirstName, LastName, Title, ID, Division, Supervisor) values (?, ?, ?, ?, ?, ?)";
+					PreparedStatement preparedStmt = conn.prepareStatement(query);
+					preparedStmt.setString(1, value.getAs("FirstName"));
+					preparedStmt.setString(2, value.getAs("LastName"));
+					preparedStmt.setString(3, value.getAs("Title"));
+					preparedStmt.setInt(4, value.getAs("ID"));
+					preparedStmt.setString(5, value.getAs("Division"));
+					preparedStmt.setString(5, value.getAs("Supervisor"));
+
+					preparedStmt.execute();
+
+					conn.close();
+
+				} catch (ClassNotFoundException | SQLException e) {
+					
+					e.printStackTrace();
+				}
+
+			}
+
+			@Override
+			public void close(Throwable errorOrNull) {
+				
+
+			}
+
+			@Override
+			public boolean open(long partitionId, long epochId) {
+				
+				return false;
+			}
+		});
 		System.out.println("SHOW SCHEMA");
-		query.awaitTermination();
 
 	}
 
 }
-
