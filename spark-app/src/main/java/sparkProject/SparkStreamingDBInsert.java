@@ -17,7 +17,6 @@ import org.apache.spark.sql.ForeachWriter;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
-import org.apache.spark.sql.streaming.DataStreamWriter;
 import org.apache.spark.sql.streaming.StreamingQuery;
 import org.apache.spark.sql.streaming.StreamingQueryException;
 import org.apache.spark.sql.types.DataTypes;
@@ -34,7 +33,7 @@ public class SparkStreamingDBInsert {
 		structType = structType.add("FirstName", DataTypes.StringType, false);
 		structType = structType.add("LastName", DataTypes.StringType, false);
 		structType = structType.add("Title", DataTypes.StringType, false);
-		structType = structType.add("ID", DataTypes.IntegerType, false);
+		structType = structType.add("ID", DataTypes.StringType, false);
 		structType = structType.add("Division", DataTypes.StringType, false);
 		structType = structType.add("Supervisor", DataTypes.StringType, false);
 
@@ -52,6 +51,7 @@ public class SparkStreamingDBInsert {
 				.option("subscribe", "Kafkademo").load();
 
 		Dataset<Row> ss = ds1.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)");
+		ss.printSchema();
 
 		Dataset<Row> finalOP = ss.flatMap(new FlatMapFunction<Row, Row>() {
 
@@ -78,7 +78,7 @@ public class SparkStreamingDBInsert {
 			}
 		}, encoder);
 
-		DataStreamWriter<Row> query = finalOP.writeStream().foreach(new ForeachWriter<Row>() {
+		StreamingQuery query  = finalOP.writeStream().foreach(new ForeachWriter<Row>() {
 
 			/**
 			 * 
@@ -99,11 +99,13 @@ public class SparkStreamingDBInsert {
 					preparedStmt.setString(1, value.getAs("FirstName"));
 					preparedStmt.setString(2, value.getAs("LastName"));
 					preparedStmt.setString(3, value.getAs("Title"));
-					preparedStmt.setInt(4, value.getAs("ID"));
+					preparedStmt.setInt(4, Integer. valueOf(value.getAs("ID")));
 					preparedStmt.setString(5, value.getAs("Division"));
-					preparedStmt.setString(5, value.getAs("Supervisor"));
+					preparedStmt.setString(6, value.getAs("Supervisor"));
 
 					preparedStmt.execute();
+					conn.commit();
+					System.out.println("COMMITTED ----------------------------------------------");
 
 					conn.close();
 
@@ -125,7 +127,9 @@ public class SparkStreamingDBInsert {
 				
 				return false;
 			}
-		});
+		}).start();
+		
+		query.awaitTermination();
 		System.out.println("SHOW SCHEMA");
 
 	}
