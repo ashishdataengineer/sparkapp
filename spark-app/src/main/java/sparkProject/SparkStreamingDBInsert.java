@@ -17,10 +17,13 @@ import org.apache.spark.sql.ForeachWriter;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
+import org.apache.spark.sql.execution.datasources.jdbc.JDBCOptions;
+import org.apache.spark.sql.streaming.OutputMode;
 import org.apache.spark.sql.streaming.StreamingQuery;
 import org.apache.spark.sql.streaming.StreamingQueryException;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
+import org.apache.spark.sql.streaming.Trigger;
 
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
@@ -77,6 +80,22 @@ public class SparkStreamingDBInsert {
 				return rows.iterator();
 			}
 		}, encoder);
+		
+		
+	/*	StreamingQuery query = finalOP
+                .writeStream()
+                .outputMode("append")
+                .format("streaming-jdbc")
+                .outputMode(OutputMode.Append())
+                .option(JDBCOptions.JDBC_URL(), "cjdbc:mysql://localhost:3306")
+                .option(JDBCOptions.JDBC_TABLE_NAME(), "sys.Employee")
+                .option(JDBCOptions.JDBC_DRIVER_CLASS(), "com.mysql.cj.jdbc.Driverr")
+                .option(JDBCOptions.JDBC_BATCH_INSERT_SIZE(), "5")
+                .option("user", "user")
+                .option("password", "ashu@123")
+                .trigger(Trigger.ProcessingTime("10 seconds"))
+                .start();
+        query.awaitTermination();*/
 
 		StreamingQuery query  = finalOP.writeStream().foreach(new ForeachWriter<Row>() {
 
@@ -89,10 +108,11 @@ public class SparkStreamingDBInsert {
 			public void process(Row value) {
 
 				try {
-					String myDriver = "org.gjt.mm.mysql.Driver";
+					String myDriver = "com.mysql.cj.jdbc.Driver";
+					Class.forName(myDriver);
 					String myUrl = "jdbc:mysql://localhost:3306";
 					Connection conn = DriverManager.getConnection(myUrl, "root", "ashu@123");
-					Class.forName(myDriver);
+					
 
 					String query = " insert into sys.Employee (FirstName, LastName, Title, ID, Division, Supervisor) values (?, ?, ?, ?, ?, ?)";
 					PreparedStatement preparedStmt = conn.prepareStatement(query);
