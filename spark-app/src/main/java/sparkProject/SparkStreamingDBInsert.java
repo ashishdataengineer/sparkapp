@@ -105,7 +105,7 @@ public class SparkStreamingDBInsert {
 
 					preparedStmt.execute();
 					conn.commit();
-					System.out.println("COMMITTED ----------------------------------------------");
+					System.out.println("COMMITTED ---------------------------------------------");
 
 					conn.close();
 
