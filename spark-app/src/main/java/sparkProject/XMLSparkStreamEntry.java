@@ -1,6 +1,5 @@
 package sparkProject;
 
-
 import java.io.StringReader;
 import java.util.*;
 
@@ -73,6 +72,23 @@ public class XMLSparkStreamEntry {
 			}
 		}, encoder);
 
+		
+		finalOP.foreachPartition(new MyPartitionFunction<Row>() {
+
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			@Override
+		    public void call(Iterator<Row> it) {
+		        while (it.hasNext()) {
+		            System.out.println(it.next().toString());
+		        }
+		    }		
+			
+		});
+		
 		Dataset<Row> wordCounts = finalOP.groupBy("FirstName").count();
 		StreamingQuery query = wordCounts.writeStream().outputMode("complete").format("console").start();
 		System.out.println("SHOW SCHEMA");

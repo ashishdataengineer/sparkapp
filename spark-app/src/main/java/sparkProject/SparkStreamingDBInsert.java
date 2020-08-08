@@ -97,12 +97,19 @@ public class SparkStreamingDBInsert {
                 .start();
         query.awaitTermination();*/
 
+		
 		StreamingQuery query  = finalOP.writeStream().foreach(new ForeachWriter<Row>() {
 
 			/**
 			 * 
 			 */
 			private static final long serialVersionUID = 1L;
+			
+			@Override
+			public boolean open(long partitionId, long epochId) {
+				
+				return true;
+			}
 
 			@Override
 			public void process(Row value) {
@@ -142,11 +149,7 @@ public class SparkStreamingDBInsert {
 
 			}
 
-			@Override
-			public boolean open(long partitionId, long epochId) {
-				
-				return false;
-			}
+
 		}).start();
 		
 		query.awaitTermination();
