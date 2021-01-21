@@ -1,5 +1,6 @@
 package sparkProject;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,12 +14,15 @@ import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
+import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.types.DataTypes;
 
 import scala.Function;
 import scala.Function1;
 
 import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.function.ForeachFunction;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.DataFrameReader;
@@ -41,16 +45,23 @@ public class StartingPoint {
 		// Entry oint for Dataset and DataFrame
 
 		SparkConf conf = new SparkConf();
+		
 		SparkSession spark = SparkSession.builder().config(conf).appName("Spark Program").master("local").getOrCreate();
-
+		SparkContext sc = spark.sparkContext();
 		/*
 		 * Entry point for Spark RDDs SparkConf conf = new
 		 * SparkConf().setAppName("Spark Program").setMaster("local"); JavaSparkContext
 		 * sc = new JavaSparkContext(conf);
 		 */
+		
 
 		Dataset<Row> ds1 = Transformations.jsonDatasetOriginal(spark,
 				context.getProperty(GlobalConstants.ReadyJsonFile));
+		
+		
+		ExpressionEncoder<Row> encoder = RowEncoder.apply(Jsonreadystructure.SCHEMA);
+		
+		
 		Dataset<Row> ds1_populationGt100k = ds1.filter(ds1.col("countryPopulation").cast("int").$greater(140000000)).alias("ds1_population");
 
 		Dataset<Row> ds1_countryNameContain_ia = ds1.filter(ds1.col("countryName").contains("ia")).alias("ds1_country");
